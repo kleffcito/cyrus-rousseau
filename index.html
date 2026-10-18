@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="La bitácora manga de Rousseau Cyrus.">
+  <title>Rousseau Cyrus | Bitácora</title>
+  <style>
+    :root { color-scheme: dark; --bg:#080808; --fg:#f1eee8; --muted:#96918a; --line:#393633; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; min-height:100%; background:var(--bg); color:var(--fg); }
+    body { font-family: Georgia, 'Times New Roman', serif; display:flex; flex-direction:column; }
+    header { width:100%; padding:20px 24px 12px; text-align:center; }
+    .eyebrow { font-size:.72rem; letter-spacing:.38em; text-transform:uppercase; color:#c8c1b8; }
+    header h1 { font-weight:400; font-size:clamp(1.1rem, 3vw, 1.65rem); letter-spacing:.2em; margin:9px 0 0; }
+    main { width:100%; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px 16px 18px; }
+    .reader { position:relative; display:flex; justify-content:center; align-items:center; width:min(100%, calc((100vh - 165px) * 0.6667)); max-width:640px; }
+    .page { display:block; width:100%; height:auto; max-height:calc(100vh - 165px); object-fit:contain; user-select:none; -webkit-user-drag:none; box-shadow:0 10px 45px #000b; cursor:pointer; animation:appear .22s ease-out; }
+    @keyframes appear { from { opacity:.55; transform:translateX(5px); } to { opacity:1; transform:translateX(0); } }
+    .nav { position:absolute; top:0; bottom:0; width:22%; border:0; background:transparent; cursor:pointer; opacity:0; transition:opacity .15s; }
+    .nav:hover, .nav:focus-visible { opacity:1; background:linear-gradient(90deg,#0008,transparent); outline:none; }
+    .nav.prev { left:0; }
+    .nav.next { right:0; }
+    .nav.next:hover, .nav.next:focus-visible { background:linear-gradient(270deg,#0008,transparent); }
+    .nav span { display:inline-grid; place-items:center; width:42px; height:42px; border:1px solid #ffffff66; border-radius:50%; color:white; font:24px Arial,sans-serif; background:#0007; }
+    .nav.prev span { position:absolute; left:12px; top:50%; transform:translateY(-50%); }
+    .nav.next span { position:absolute; right:12px; top:50%; transform:translateY(-50%); }
+    .controls { width:min(100%, 640px); display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:15px; color:var(--muted); font-family:Arial,sans-serif; font-size:.78rem; letter-spacing:.08em; }
+    .controls button { color:var(--fg); background:transparent; border:1px solid var(--line); padding:9px 13px; cursor:pointer; font:inherit; letter-spacing:.06em; }
+    .controls button:hover:not(:disabled) { border-color:#aaa39a; background:#ffffff0a; }
+    .controls button:disabled { opacity:.25; cursor:default; }
+    .counter { text-align:center; min-width:82px; }
+    .chapter { display:block; margin-top:5px; font-size:.65rem; letter-spacing:.13em; text-transform:uppercase; }
+    footer { text-align:center; color:#625d57; padding:0 12px 15px; font: .68rem Arial,sans-serif; letter-spacing:.12em; }
+    @media (max-width:600px) {
+      header { padding-top:14px; }
+      main { padding:4px 8px 14px; }
+      .reader { width:min(100%, calc((100dvh - 150px) * 0.6667)); }
+      .page { max-height:calc(100dvh - 150px); }
+      .controls { padding-top:10px; }
+      .controls button { padding:9px 10px; }
+      .nav { width:25%; opacity:1; }
+      .nav span { width:34px; height:34px; font-size:20px; }
+      .nav.prev span { left:6px; } .nav.next span { right:6px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .page { animation:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Bitácora manga</div>
+    <h1>ROUSSEAU CYRUS</h1>
+  </header>
+  <main>
+    <section class="reader" aria-label="Lector de manga">
+      <img class="page" id="pageImage" src="images/capitulo-0.png" alt="Capítulo 0: La infancia" draggable="false">
+      <button class="nav prev" id="imagePrev" aria-label="Página anterior" title="Página anterior"><span>‹</span></button>
+      <button class="nav next" id="imageNext" aria-label="Página siguiente" title="Página siguiente"><span>›</span></button>
+    </section>
+    <nav class="controls" aria-label="Controles de página">
+      <button id="prevButton" type="button">← Anterior</button>
+      <div class="counter" aria-live="polite"><span id="pageCounter">01 / 06</span><span class="chapter" id="chapterLabel">Capítulo 0 · La infancia</span></div>
+      <button id="nextButton" type="button">Siguiente →</button>
+    </nav>
+  </main>
+  <footer>USA ← → O DESLIZA PARA PASAR PÁGINA</footer>
+  <script>
+    const pages = [
+      { src:'images/capitulo-0.png', alt:'Portada del capítulo 0: La infancia', chapter:'Capítulo 0 · La infancia' },
+      { src:'images/pagina-01.png', alt:'Página 1: Tumi antes de la guerra', chapter:'Capítulo 0 · La infancia' },
+      { src:'images/pagina-02.png', alt:'Página 2: Las primeras grietas', chapter:'Capítulo 0 · La infancia' },
+      { src:'images/pagina-03.png', alt:'Página 3: El día en que Tumi cayó', chapter:'Capítulo 0 · La infancia' },
+      { src:'images/pagina-04.png', alt:'Página 4: La primera vez que Cyrus intervino', chapter:'Capítulo 0 · La infancia' },
+      { src:'images/pagina-05.png', alt:'Página 5: Las consecuencias de su decisión', chapter:'Capítulo 0 · La infancia' }
+    ];
+    let current = 0;
+    const image = document.getElementById('pageImage');
+    const counter = document.getElementById('pageCounter');
+    const chapterLabel = document.getElementById('chapterLabel');
+    const prevButton = document.getElementById('prevButton');
+    const nextButton = document.getElementById('nextButton');
+    function showPage(index) {
+      current = Math.max(0, Math.min(pages.length - 1, index));
+      const page = pages[current];
+      image.src = page.src;
+      image.alt = page.alt;
+      image.style.animation = 'none';
+      void image.offsetWidth;
+      image.style.animation = '';
+      counter.textContent = `${String(current + 1).padStart(2, '0')} / ${String(pages.length).padStart(2, '0')}`;
+      chapterLabel.textContent = page.chapter;
+      prevButton.disabled = current === 0;
+      nextButton.disabled = current === pages.length - 1;
+      document.title = `${page.chapter} | Rousseau Cyrus`;
+      history.replaceState(null, '', `#pagina-${current + 1}`);
+    }
+    function next() { if (current < pages.length - 1) showPage(current + 1); }
+    function prev() { if (current > 0) showPage(current - 1); }
+    prevButton.addEventListener('click', prev);
+    nextButton.addEventListener('click', next);
+    document.getElementById('imagePrev').addEventListener('click', e => { e.stopPropagation(); prev(); });
+    document.getElementById('imageNext').addEventListener('click', e => { e.stopPropagation(); next(); });
+    image.addEventListener('click', next);
+    document.addEventListener('keydown', e => {
+      if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); next(); }
+      if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
+      if (e.key === 'Home') showPage(0);
+      if (e.key === 'End') showPage(pages.length - 1);
+    });
+    let touchStartX = 0, touchStartY = 0;
+    image.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, {passive:true});
+    image.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].screenX - touchStartX;
+      const dy = e.changedTouches[0].screenY - touchStartY;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) { dx < 0 ? next() : prev(); }
+    }, {passive:true});
+    const hashMatch = location.hash.match(/pagina-(\d+)/);
+    if (hashMatch) current = Math.max(0, Math.min(pages.length - 1, Number(hashMatch[1]) - 1));
+    showPage(current);
+  </script>
+</body>
+</html>
